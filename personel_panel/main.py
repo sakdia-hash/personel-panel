@@ -64,7 +64,12 @@ def save_data(data: dict):
 
 @app.get("/")
 def root():
-    return FileResponse("personeltakip.html")
+   import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+HTML_FILE = os.path.join(BASE_DIR, "personeltakip.html")
+
+return FileResponse(HTML_FILE)
 
 
 @app.get("/api/state")
@@ -97,3 +102,4 @@ async def login(payload: dict):
         "status": "error",
         "message": "Kullanıcı adı veya şifre hatalı."
     }
+
