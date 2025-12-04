@@ -1,0 +1,186 @@
+{
+  "employees": [
+    {
+      "id": "emp_l32e4b8mirfjsyo",
+      "name": "kenan",
+      "socialAccounts": 20,
+      "active": true
+    },
+    {
+      "id": "emp_ak48m4qmirfk79l",
+      "name": "selen",
+      "socialAccounts": 20,
+      "active": true
+    },
+    {
+      "id": "emp_vdtcmz8mirfkmw6",
+      "name": "gabardagı",
+      "socialAccounts": 15,
+      "active": true
+    },
+    {
+      "id": "emp_ezfzymsmirfl0k6",
+      "name": "yagız",
+      "socialAccounts": 18,
+      "active": true
+    },
+    {
+      "id": "emp_ctu4sqjmirgcppk",
+      "name": "şerone",
+      "socialAccounts": 20,
+      "active": true
+    }
+  ],
+  "admins": [
+    {
+      "id": "adm_admin_default",
+      "name": "Sistem Admin",
+      "username": "admin"
+    },
+    {
+      "id": "adm_g3j2tttmirhuc7w",
+      "name": "anıl",
+      "username": "anıl"
+    },
+    {
+      "id": "adm_jxug1hbmiri4yd3",
+      "name": "fırat",
+      "username": "fırat"
+    }
+  ],
+  "weeks": [
+    {
+      "id": "week_9d1i6wvmirfimf3",
+      "label": "1. Hafta",
+      "stats": {
+        "emp_l32e4b8mirfjsyo": {
+          "membersAdded": 0,
+          "socialAccounts": 0
+        },
+        "emp_ak48m4qmirfk79l": {
+          "membersAdded": 0,
+          "socialAccounts": 0
+        },
+        "emp_vdtcmz8mirfkmw6": {
+          "membersAdded": 0,
+          "socialAccounts": 0
+        },
+        "emp_ezfzymsmirfl0k6": {
+          "membersAdded": 0,
+          "socialAccounts": 0
+        },
+        "emp_ctu4sqjmirgcppk": {
+          "membersAdded": 0,
+          "socialAccounts": 0
+        }
+      }
+    },
+    {
+      "id": "week_3i7sh4amirg4i5b",
+      "label": "17.11-24.11",
+      "stats": {
+        "emp_l32e4b8mirfjsyo": {
+          "membersAdded": 0,
+          "socialAccounts": 0
+        },
+        "emp_ak48m4qmirfk79l": {
+          "membersAdded": 0,
+          "socialAccounts": 0
+        },
+        "emp_vdtcmz8mirfkmw6": {
+          "membersAdded": 550,
+          "socialAccounts": 15
+        },
+        "emp_ezfzymsmirfl0k6": {
+          "membersAdded": 405,
+          "socialAccounts": 18
+        },
+        "emp_ctu4sqjmirgcppk": {
+          "membersAdded": 0,
+          "socialAccounts": 0
+        }
+      }
+    },
+    {
+      "id": "week_tz7rf8dmirg81ly",
+      "label": "25.11-01.12",
+      "stats": {
+        "emp_l32e4b8mirfjsyo": {
+          "membersAdded": 0,
+          "socialAccounts": 20
+        },
+        "emp_ak48m4qmirfk79l": {
+          "membersAdded": 0,
+          "socialAccounts": 20
+        },
+        "emp_vdtcmz8mirfkmw6": {
+          "membersAdded": 149,
+          "socialAccounts": 15
+        },
+        "emp_ezfzymsmirfl0k6": {
+          "membersAdded": 235,
+          "socialAccounts": 18
+        },
+        "emp_ctu4sqjmirgcppk": {
+          "membersAdded": 0,
+          "socialAccounts": 20
+        }
+      }
+    }
+  ],
+  "users": [
+    {
+      "id": "user_admin_default",
+      "username": "admin",
+      "password": "1234",
+      "role": "admin"
+    },
+    {
+      "id": "user_76bn6dkmirfjsyo",
+      "username": "kenan1",
+      "password": "kenan123",
+      "role": "employee",
+      "employeeId": "emp_l32e4b8mirfjsyo"
+    },
+    {
+      "id": "user_bm8pl7vmirfk79l",
+      "username": "selen1",
+      "password": "selen123",
+      "role": "employee",
+      "employeeId": "emp_ak48m4qmirfk79l"
+    },
+    {
+      "id": "user_i84xax3mirfkmw6",
+      "username": "gabardagı1",
+      "password": "gabar123",
+      "role": "employee",
+      "employeeId": "emp_vdtcmz8mirfkmw6"
+    },
+    {
+      "id": "user_vlx1jarmirfl0k6",
+      "username": "yagız1",
+      "password": "yagız123",
+      "role": "employee",
+      "employeeId": "emp_ezfzymsmirfl0k6"
+    },
+    {
+      "id": "user_z261u8smirgcppk",
+      "username": "şerone",
+      "password": "şerone1",
+      "role": "employee",
+      "employeeId": "emp_ctu4sqjmirgcppk"
+    },
+    {
+      "id": "user_wgaeg9nmirhuc7w",
+      "username": "anıl",
+      "password": "anıl52",
+      "role": "admin"
+    },
+    {
+      "id": "user_rtd4trqmiri4yd3",
+      "username": "fırat",
+      "password": "fırat36",
+      "role": "admin"
+    }
+  ]
+}

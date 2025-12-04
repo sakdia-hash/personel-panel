@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Personel Takip Paneli</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    body {
+      background: #f5f7fb;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .navbar-brand span {
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+    .card {
+      border-radius: 1rem;
+    }
+    .stat-number {
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .badge-role {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .table thead th {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .highlight-row {
+      background: #fff9e6;
+    }
+    .form-control-sm {
+      min-width: 4.5rem;
+    }
+    .pointer {
+      cursor: pointer;
+    }
+    #loginView {
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body>
+
+<!-- GİRİŞ EKRANI -->
+<div id="loginView" class="d-flex align-items-center justify-content-center">
+  <div class="card shadow-sm" style="max-width: 380px; width: 100%;">
+    <div class="card-body">
+      <h5 class="mb-3 text-center">Personel Takip Giriş</h5>
+      <div class="mb-3">
+        <label class="form-label mb-1">Kullanıcı Adı</label>
+        <input type="text" id="loginUsername" class="form-control" autocomplete="username" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label mb-1">Şifre</label>
+        <input type="password" id="loginPassword" class="form-control" autocomplete="current-password" />
+      </div>
+      <button id="btnLogin" class="btn btn-primary w-100">Giriş Yap</button>
+      <div id="loginError" class="text-danger small mt-2 d-none"></div>
+      <div class="text-muted small mt-3">
+        İlk giriş için <strong>yöneticinize ulaşın</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UYGULAMA GÖRÜNÜMÜ -->
+<div id="appView" class="d-none">
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand d-flex align-items-center" href="#">
+        <span class="me-2">📊</span>
+        <span>Personel Takip Paneli</span>
+      </a>
+      <div class="d-flex align-items-center gap-2">
+        <span class="text-muted small">
+          Giriş yapan: <strong id="currentUserLabel"></strong> |
+          Rol: <span id="roleLabel"></span>
+        </span>
+
+        <!-- Hamburger Menü sadece admin için -->
+        <button
+          id="btnMenuToggle"
+          class="btn btn-sm btn-outline-secondary"
+          type="button"
+          title="Menü"
+        >
+          ☰
+        </button>
+
+        <button id="btnLogout" class="btn btn-sm btn-outline-danger">
+          Çıkış
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid px-4 py-4">
+    <!-- Üst Satır: Hafta seçimi + genel özet kartları -->
+    <div class="row g-3 mb-3 align-items-center">
+      <div class="col-md-4 col-lg-3">
+        <label for="weekSelect" class="form-label mb-1">Hafta Seç</label>
+        <div class="input-group">
+         <select id="weekSelect" class="form-select form-select-sm">
+  <option value="" disabled selected>Haftalar</option>
+</select>
+
+          <button id="btnAddWeek" class="btn btn-sm btn-outline-primary admin-only" type="button">
+            + Yeni Hafta
+          </button>
+        </div>
+        <div class="form-text">
+          Her hafta için ayrı giriş yapabilir, eski haftalara geri dönüp rapor görebilirsin.
+        </div>
+      </div>
+
+      <div class="col-md-8 col-lg-9">
+        <div class="row g-3">
+          <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+              <div class="card-body py-2">
+                <div class="text-muted small">Toplam Üye (Tarihsel)</div>
+                <div id="statTotalMembers" class="stat-number">0</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+              <div class="card-body py-2">
+                <div class="text-muted small">Toplam Sosyal Medya Hesabı</div>
+                <div id="statTotalAccounts" class="stat-number">0</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+              <div class="card-body py-2">
+                <div class="text-muted small">Bu Hafta Büyüme</div>
+                <div id="statWeeklyGrowth" class="stat-number">0%</div>
+                <small id="statWeeklyGrowthInfo" class="text-muted"></small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card shadow-sm h-100">
+              <div class="card-body py-2">
+                <div class="text-muted small">Aktif Çalışan</div>
+                <div id="statEmployeeCount" class="stat-number">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orta Satır: Hafta Özeti + Haftanın Elemanı -->
+    <div class="row g-3 mb-4">
+      <div class="col-lg-8">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Seçili Hafta Özeti</h6>
+            <small id="weekSummaryLabel" class="text-muted"></small>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table mb-0 align-middle">
+                <thead class="table-light">
+                <tr>
+                  <th>Çalışan</th>
+                  <th class="text-center">Bu Hafta Üye</th>
+                  <th class="text-center">Toplam Hesap</th>
+                  <th class="text-center">Önceki Haftaya Göre %</th>
+                </tr>
+                </thead>
+                <tbody id="overviewTableBody">
+                <!-- JS ile doldurulacak -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card shadow-sm mb-3">
+          <div class="card-header">
+            <h6 class="mb-0">Haftanın Elemanı</h6>
+          </div>
+          <div class="card-body" id="employeeOfWeekBox">
+            <p class="text-muted mb-0">Bu hafta için henüz veri girilmemiş.</p>
+          </div>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="card-header">
+            <h6 class="mb-0">Haftalık Büyüme Grafiği</h6>
+          </div>
+          <div class="card-body">
+            <canvas id="growthChart" height="160"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hafta Veri Girişi / Güncelleme -->
+    <div class="card shadow-sm mb-4 admin-only">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Seçili Hafta Verilerini Düzenle</h6>
+        <small class="text-muted">Değişiklikleri kaydetmeyi unutma.</small>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table mb-0 align-middle">
+            <thead class="table-light">
+            <tr>
+              <th>Çalışan</th>
+              <th class="text-center">Bu Hafta Getirdiği Üye</th>
+              <th class="text-center">Toplam Sosyal Medya Hesabı</th>
+            </tr>
+            </thead>
+            <tbody id="editTableBody">
+            <!-- JS ile doldurulacak -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer text-end">
+        <button id="btnSaveWeekData" class="btn btn-primary btn-sm">
+          💾 Değişiklikleri Kaydet
+        </button>
+      </div>
+    </div>
+
+    <!-- Admin Yönetimi: sadece liste (ekleme için menü kullanılacak) -->
+    <div class="row g-3 admin-only">
+      <div class="col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Çalışanlar</h6>
+            <small class="text-muted">Yeni çalışan eklemek için menüyü kullan.</small>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                  <th>Ad</th>
+                  <th>Kullanıcı Adı</th>
+                  <th>Şifre</th>
+                  <th class="text-center">Toplam Hesap</th>
+                  <th class="text-end">İşlem</th>
+                </tr>
+                </thead>
+                <tbody id="employeeListBody">
+                <!-- JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Yöneticiler</h6>
+            <small class="text-muted">Yeni yönetici eklemek için menüyü kullan.</small>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                <tr>
+                  <th>İsim</th>
+                  <th>Kullanıcı Adı</th>
+                  <th class="text-end">İşlem</th>
+                </tr>
+                </thead>
+                <tbody id="adminListBody">
+                <!-- JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- /container -->
+</div> <!-- /appView -->
+
+<!-- ORTADA AÇILAN KÜÇÜK PANEL (OVERLAY) -->
+<div
+  id="overlayBack"
+  class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-none"
+  style="z-index: 1050;"
+>
+  <div class="d-flex justify-content-center align-items-center h-100">
+    <div class="card shadow-lg" style="max-width: 420px; width: 100%;">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0" id="overlayTitle">Menü</h6>
+        <button type="button" class="btn-close" id="btnOverlayClose"></button>
+      </div>
+      <div class="card-body" id="overlayBody">
+        <!-- JS dolduracak -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  const API_BASE = ""; // aynı host/port
+
+  let state = {
+    employees: [],
+    admins: [],
+    weeks: [],
+    users: []
+  };
+
+  let growthChart = null;
+  let currentUser = {
+    username: "",
+    role: "employee" // veya "admin"
+  };
+
+  // ===================== GENEL FONKSİYONLAR =====================
+
+  function generateId(prefix) {
+    return prefix + "_" + Math.random().toString(36).slice(2, 9) + Date.now().toString(36);
+  }
+
+  async function loadState() {
+    try {
+      const res = await fetch(API_BASE + "/api/state");
+      if (res.ok) {
+        const data = await res.json();
+        if (!data.employees) data.employees = [];
+        if (!data.admins) data.admins = [];
+        if (!data.weeks) data.weeks = [];
+        if (!data.users) data.users = [];
+        state = data;
+      }
+    } catch (e) {
+      console.error("State yüklenemedi:", e);
+    }
+  }
+
+  async function saveState() {
+    try {
+      await fetch(API_BASE + "/api/state", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(state)
+      });
+    } catch (e) {
+      console.error("State kaydedilemedi:", e);
+    }
+  }
+
+  // ===================== LOGIN / ROL =====================
+
+  async function doLogin(username, password) {
+    const res = await fetch(API_BASE + "/api/login", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({username, password})
+    });
+
+    const data = await res.json();
+    if (data.status === "ok") {
+      currentUser.username = data.username;
+      currentUser.role = data.role;
+      return true;
+    } else {
+      throw new Error(data.message || "Giriş yapılamadı");
+    }
+  }
+
+  function isAdmin() {
+    return currentUser.role === "admin";
+  }
+
+  function updateRoleUI() {
+    const roleLabel = document.getElementById("roleLabel");
+    const currentUserLabel = document.getElementById("currentUserLabel");
+    roleLabel.textContent = isAdmin() ? "Yönetici" : "Çalışan";
+    currentUserLabel.textContent = currentUser.username;
+
+    document.querySelectorAll(".admin-only").forEach(el => {
+      el.style.display = isAdmin() ? "" : "none";
+    });
+
+    // Hamburger menü: sadece admin kullansın
+    document.getElementById("btnMenuToggle").style.display = isAdmin() ? "" : "none";
+  }
+
+  function showLoginView() {
+    document.getElementById("loginView").classList.remove("d-none");
+    document.getElementById("appView").classList.add("d-none");
+  }
+
+  function showAppView() {
+    document.getElementById("loginView").classList.add("d-none");
+    document.getElementById("appView").classList.remove("d-none");
+  }
+
+  // ===================== HESAPLAMALAR =====================
+
+  function getSelectedWeekId() {
+    const sel = document.getElementById("weekSelect");
+    return sel.value || (state.weeks[0] ? state.weeks[0].id : null);
+  }
+
+  function getWeekById(id) {
+    return state.weeks.find(w => w.id === id) || null;
+  }
+
+  function getPreviousWeek(currentWeekId) {
+    const idx = state.weeks.findIndex(w => w.id === currentWeekId);
+    if (idx > 0) return state.weeks[idx - 1];
+    return null;
+  }
+
+  function getTotalMembersAllTime() {
+    return state.weeks.reduce((acc, week) => {
+      const sumWeek = Object.values(week.stats || {}).reduce(
+        (s, st) => s + (Number(st.membersAdded) || 0),
+        0
+      );
+      return acc + sumWeek;
+    }, 0);
+  }
+
+  function getTotalSocialAccounts() {
+    return state.employees.reduce((acc, emp) => acc + (Number(emp.socialAccounts) || 0), 0);
+  }
+
+  function getWeeklyTotals(week) {
+    if (!week) return 0;
+    return Object.values(week.stats || {}).reduce(
+      (sum, s) => sum + (Number(s.membersAdded) || 0),
+      0
+    );
+  }
+
+  function computeWeeklyGrowth(selectedWeekId) {
+    const week = getWeekById(selectedWeekId);
+    if (!week) return {percent: 0, current: 0, previous: 0};
+
+    const prev = getPreviousWeek(selectedWeekId);
+    const currentTotal = getWeeklyTotals(week);
+    const prevTotal = getWeeklyTotals(prev);
+
+    if (prevTotal === 0) {
+      return {percent: 0, current: currentTotal, previous: prevTotal};
+    }
+    const pct = ((currentTotal - prevTotal) / prevTotal) * 100;
+    return {percent: pct, current: currentTotal, previous: prevTotal};
+  }
+
+  function computeEmployeeWeekStats(week, previousWeek) {
+    const result = [];
+    state.employees.forEach(emp => {
+      const currentStats = (week && week.stats && week.stats[emp.id]) || {
+        membersAdded: 0,
+        socialAccounts: emp.socialAccounts
+      };
+      const prevStats = (previousWeek && previousWeek.stats && previousWeek.stats[emp.id]) || {
+        membersAdded: 0,
+        socialAccounts: emp.socialAccounts
+      };
+
+      const currentMembers = Number(currentStats.membersAdded) || 0;
+      const prevMembers = Number(prevStats.membersAdded) || 0;
+
+      let growthPct = 0;
+      if (prevMembers > 0) {
+        growthPct = ((currentMembers - prevMembers) / prevMembers) * 100;
+      } else if (currentMembers > 0) {
+        growthPct = 100;
+      }
+
+      result.push({
+        employee: emp,
+        currentMembers,
+        currentAccounts: Number(currentStats.socialAccounts) || emp.socialAccounts || 0,
+        growthPct
+      });
+    });
+    return result;
+  }
+
+  function getEmployeeOfWeek(week) {
+    if (!week) return null;
+    let best = null;
+    Object.keys(week.stats || {}).forEach(empId => {
+      const st = week.stats[empId];
+      const members = Number(st.membersAdded) || 0;
+      if (!best || members > best.membersAdded) {
+        const emp = state.employees.find(e => e.id === empId);
+        if (emp) {
+          best = {
+            employee: emp,
+            membersAdded: members,
+            accounts: Number(st.socialAccounts) || emp.socialAccounts || 0
+          };
+        }
+      }
+    });
+    return best;
+  }
+
+  // ===================== RENDER =====================
+
+ function renderWeekSelect(selectedId) {
+  const sel = document.getElementById("weekSelect");
+
+  // Placeholder'ı koru
+  sel.innerHTML = `<option value="" disabled selected>Haftalar</option>`;
+
+  // Haftaları ekle
+  state.weeks.forEach(week => {
+    const opt = document.createElement("option");
+    opt.value = week.id;
+    opt.textContent = week.label;
+    sel.appendChild(opt);
+  });
+
+  // Eğer spesifik bir hafta seçilmişse
+  if (selectedId && state.weeks.some(w => w.id === selectedId)) {
+    sel.value = selectedId;
+  }
+}
+
+
+  function renderSummaryCards(selectedWeekId) {
+    const totalMembers = getTotalMembersAllTime();
+    const totalAccounts = getTotalSocialAccounts();
+    const empCount = state.employees.length;
+
+    document.getElementById("statTotalMembers").textContent = totalMembers.toLocaleString("tr-TR");
+    document.getElementById("statTotalAccounts").textContent = totalAccounts.toLocaleString("tr-TR");
+    document.getElementById("statEmployeeCount").textContent = empCount.toString();
+
+    const growth = computeWeeklyGrowth(selectedWeekId);
+    const pctRounded = Math.round(growth.percent * 10) / 10;
+    const growthEl = document.getElementById("statWeeklyGrowth");
+    const infoEl = document.getElementById("statWeeklyGrowthInfo");
+
+    const sign = pctRounded > 0 ? "+" : "";
+    growthEl.textContent = sign + pctRounded + "%";
+
+    if (growth.previous === 0) {
+      infoEl.textContent = "Önceki hafta verisi yok.";
+    } else {
+      infoEl.textContent =
+        "Bu hafta: " +
+        growth.current.toLocaleString("tr-TR") +
+        " üye, önceki hafta: " +
+        growth.previous.toLocaleString("tr-TR");
+    }
+  }
+
+  function renderOverviewTable(selectedWeekId) {
+    const tbody = document.getElementById("overviewTableBody");
+    tbody.innerHTML = "";
+
+    const week = getWeekById(selectedWeekId);
+    const prev = getPreviousWeek(selectedWeekId);
+    const weekStats = computeEmployeeWeekStats(week, prev);
+
+    const employeeOfWeek = getEmployeeOfWeek(week);
+    const bestId = employeeOfWeek ? employeeOfWeek.employee.id : null;
+
+    document.getElementById("weekSummaryLabel").textContent = week ? week.label : "";
+
+    weekStats.forEach(row => {
+      const tr = document.createElement("tr");
+      if (row.employee.id === bestId) {
+        tr.classList.add("highlight-row");
+      }
+
+      const tdName = document.createElement("td");
+      tdName.textContent = row.employee.name;
+
+      const tdMembers = document.createElement("td");
+      tdMembers.className = "text-center";
+      tdMembers.textContent = row.currentMembers.toLocaleString("tr-TR");
+
+      const tdAccounts = document.createElement("td");
+      tdAccounts.className = "text-center";
+      tdAccounts.textContent = row.currentAccounts.toLocaleString("tr-TR");
+
+      const tdGrowth = document.createElement("td");
+      tdGrowth.className = "text-center";
+      const pct = Math.round(row.growthPct * 10) / 10;
+      let badgeClass = "bg-secondary";
+      if (pct > 0) badgeClass = "bg-success";
+      if (pct < 0) badgeClass = "bg-danger";
+      const span = document.createElement("span");
+      span.className = "badge " + badgeClass;
+      const sign = pct > 0 ? "+" : "";
+      span.textContent = sign + pct + "%";
+      tdGrowth.appendChild(span);
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdMembers);
+      tr.appendChild(tdAccounts);
+      tr.appendChild(tdGrowth);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderEditTable(selectedWeekId) {
+    const tbody = document.getElementById("editTableBody");
+    tbody.innerHTML = "";
+
+    const week = getWeekById(selectedWeekId);
+    if (!week) return;
+
+    state.employees.forEach(emp => {
+      const stats = (week.stats && week.stats[emp.id]) || {
+        membersAdded: 0,
+        socialAccounts: emp.socialAccounts || 0
+      };
+
+      const tr = document.createElement("tr");
+
+      const tdName = document.createElement("td");
+      tdName.textContent = emp.name;
+
+      const tdMembers = document.createElement("td");
+      tdMembers.className = "text-center";
+      const inputMembers = document.createElement("input");
+      inputMembers.type = "number";
+      inputMembers.min = "0";
+      inputMembers.value = Number(stats.membersAdded) || 0;
+      inputMembers.className = "form-control form-control-sm text-center";
+      inputMembers.dataset.employeeId = emp.id;
+      inputMembers.dataset.field = "membersAdded";
+      if (!isAdmin()) inputMembers.disabled = true;
+      tdMembers.appendChild(inputMembers);
+
+      const tdAccounts = document.createElement("td");
+      tdAccounts.className = "text-center";
+      const inputAccounts = document.createElement("input");
+      inputAccounts.type = "number";
+      inputAccounts.min = "0";
+      inputAccounts.value = Number(stats.socialAccounts) || emp.socialAccounts || 0;
+      inputAccounts.className = "form-control form-control-sm text-center";
+      inputAccounts.dataset.employeeId = emp.id;
+      inputAccounts.dataset.field = "socialAccounts";
+      if (!isAdmin()) inputAccounts.disabled = true;
+      tdAccounts.appendChild(inputAccounts);
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdMembers);
+      tr.appendChild(tdAccounts);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderEmployeeOfWeekBox(selectedWeekId) {
+    const box = document.getElementById("employeeOfWeekBox");
+    box.innerHTML = "";
+
+    const week = getWeekById(selectedWeekId);
+    const best = getEmployeeOfWeek(week);
+
+    if (!best || best.membersAdded === 0) {
+      const p = document.createElement("p");
+      p.className = "text-muted mb-0";
+      p.textContent = "Bu hafta için henüz üye girişi yapılmamış.";
+      box.appendChild(p);
+      return;
+    }
+
+    const title = document.createElement("h5");
+    title.textContent = best.employee.name;
+
+    const badge = document.createElement("span");
+    badge.className = "badge bg-warning text-dark badge-role ms-1";
+    badge.textContent = "Haftanın Elemanı";
+
+    const membersP = document.createElement("p");
+    membersP.className = "mb-1 mt-2";
+    membersP.innerHTML =
+      "<strong>" +
+      best.membersAdded.toLocaleString("tr-TR") +
+      "</strong> yeni üye getirdi.";
+
+    const accountsP = document.createElement("p");
+    accountsP.className = "mb-1 text-muted";
+    accountsP.textContent =
+      "Elindeki toplam hesap: " +
+      best.accounts.toLocaleString("tr-TR") +
+      " sosyal medya hesabı.";
+
+    box.appendChild(title);
+    box.appendChild(badge);
+    box.appendChild(membersP);
+    box.appendChild(accountsP);
+  }
+
+  function renderEmployeeList() {
+    const tbody = document.getElementById("employeeListBody");
+    tbody.innerHTML = "";
+
+    state.employees.forEach(emp => {
+      const tr = document.createElement("tr");
+
+      // Bu çalışana bağlı user'ı bul
+      const user = state.users.find(
+        u => u.role === "employee" && u.employeeId === emp.id
+      );
+
+      // Ad
+      const tdName = document.createElement("td");
+      tdName.textContent = emp.name;
+
+      // Kullanıcı adı
+      const tdUser = document.createElement("td");
+      tdUser.textContent = user ? user.username : "-";
+
+      // Şifre
+      const tdPass = document.createElement("td");
+      if (user && isAdmin()) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "form-control form-control-sm";
+        input.value = user.password || "";
+        input.dataset.userId = user.id;
+
+        input.addEventListener("change", (e) => {
+          const newPass = e.target.value;
+          const u = state.users.find(x => x.id === input.dataset.userId);
+          if (u) {
+            u.password = newPass;
+            saveState();
+          }
+        });
+
+        tdPass.appendChild(input);
+      } else {
+        tdPass.textContent = user ? "—" : "-";
+      }
+
+      // Toplam hesap
+      const tdAcc = document.createElement("td");
+      tdAcc.className = "text-center";
+      tdAcc.textContent = (Number(emp.socialAccounts) || 0).toLocaleString("tr-TR");
+
+      // İşlem
+      const tdActions = document.createElement("td");
+      tdActions.className = "text-end";
+      if (isAdmin()) {
+        const btnDel = document.createElement("button");
+        btnDel.className = "btn btn-sm btn-outline-danger";
+        btnDel.textContent = "Sil";
+        btnDel.onclick = function () {
+          if (confirm(emp.name + " adlı çalışanı silmek istediğine emin misin?")) {
+            deleteEmployee(emp.id);
+          }
+        };
+        tdActions.appendChild(btnDel);
+      }
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdUser);
+      tr.appendChild(tdPass);
+      tr.appendChild(tdAcc);
+      tr.appendChild(tdActions);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderAdminList() {
+    const tbody = document.getElementById("adminListBody");
+    tbody.innerHTML = "";
+
+    state.admins.forEach(adm => {
+      const tr = document.createElement("tr");
+
+      const tdName = document.createElement("td");
+      tdName.textContent = adm.name;
+
+      const tdUser = document.createElement("td");
+      tdUser.textContent = adm.username;
+
+      const tdActions = document.createElement("td");
+      tdActions.className = "text-end";
+      if (isAdmin()) {
+        const btnDel = document.createElement("button");
+        btnDel.className = "btn btn-sm btn-outline-danger";
+        btnDel.textContent = "Sil";
+        btnDel.onclick = function () {
+          if (confirm(adm.name + " adlı admini silmek istediğine emin misin?")) {
+            deleteAdmin(adm.id);
+          }
+        };
+        tdActions.appendChild(btnDel);
+      }
+      tr.appendChild(tdName);
+      tr.appendChild(tdUser);
+      tr.appendChild(tdActions);
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function buildGrowthChart() {
+    const ctx = document.getElementById("growthChart").getContext("2d");
+    const labels = state.weeks.map(w => w.label);
+    const data = state.weeks.map(w => getWeeklyTotals(w));
+
+    if (growthChart) {
+      growthChart.destroy();
+    }
+
+    growthChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Haftalık Toplam Üye",
+            data,
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: {
+            ticks: {
+              autoSkip: true,
+              maxTicksLimit: 6
+            }
+          },
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  function renderAll(selectedWeekId) {
+  const weekId =
+    selectedWeekId ||
+    getSelectedWeekId() ||
+    (state.weeks[0] && state.weeks[0].id);
+
+  renderWeekSelect(weekId);
+  renderSummaryCards(weekId);
+  renderOverviewTable(weekId);
+  renderEditTable(weekId);
+  renderEmployeeOfWeekBox(weekId);
+  renderEmployeeList();
+  renderAdminList();
+  buildGrowthChart();
+  updateRoleUI();
+}
+
+
+  // ===================== CRUD =====================
+
+  function addWeek(label, shouldSave = true) {
+    const id = generateId("week");
+    const week = { id, label, stats: {} };
+
+    state.employees.forEach(emp => {
+      week.stats[emp.id] = {
+        membersAdded: 0,
+        socialAccounts: emp.socialAccounts || 0
+      };
+    });
+
+    state.weeks.push(week);
+    if (shouldSave) saveState();
+    renderAll(id);
+  }
+
+  function saveWeekDataFromInputs(showAlert) {
+    if (!isAdmin()) return;
+    const selectedWeekId = getSelectedWeekId();
+    const week = getWeekById(selectedWeekId);
+    if (!week) return;
+
+    const inputs = document.querySelectorAll("#editTableBody input");
+    inputs.forEach(inp => {
+      const empId = inp.dataset.employeeId;
+      const field = inp.dataset.field;
+      const value = Number(inp.value) || 0;
+
+      if (!week.stats[empId]) {
+        week.stats[empId] = { membersAdded: 0, socialAccounts: 0 };
+      }
+      week.stats[empId][field] = value;
+
+      if (field === "socialAccounts") {
+        const emp = state.employees.find(e => e.id === empId);
+        if (emp) {
+          emp.socialAccounts = value;
+        }
+      }
+    });
+
+    saveState();
+    renderAll(selectedWeekId);
+
+    if (showAlert) {
+      alert("Hafta verileri kaydedildi.");
+    }
+  }
+
+  function addEmployeeWithUser({name, username, password, accounts}) {
+    const empId = generateId("emp");
+    const emp = {
+      id: empId,
+      name: name.trim(),
+      socialAccounts: Number(accounts) || 0,
+      active: true
+    };
+    state.employees.push(emp);
+
+    state.weeks.forEach(week => {
+      if (!week.stats[emp.id]) {
+        week.stats[emp.id] = {
+          membersAdded: 0,
+          socialAccounts: emp.socialAccounts
+        };
+      }
+    });
+
+    const user = {
+      id: generateId("user"),
+      username: username.trim(),
+      password: password.trim(),
+      role: "employee",
+      employeeId: empId
+    };
+    state.users.push(user);
+
+    saveState();
+    renderAll(getSelectedWeekId());
+  }
+
+  function addAdminWithUser({name, username, password}) {
+    const admId = generateId("adm");
+    const adm = {
+      id: admId,
+      name: name.trim(),
+      username: username.trim()
+    };
+    state.admins.push(adm);
+
+    const user = {
+      id: generateId("user"),
+      username: username.trim(),
+      password: password.trim(),
+      role: "admin"
+    };
+    state.users.push(user);
+
+    saveState();
+    renderAll(getSelectedWeekId());
+  }
+
+  function deleteEmployee(empId) {
+    state.employees = state.employees.filter(e => e.id !== empId);
+    state.weeks.forEach(week => {
+      if (week.stats && week.stats[empId]) {
+        delete week.stats[empId];
+      }
+    });
+
+    // Bu çalışana bağlı user'ı da sil (employeeId eşleşen)
+    state.users = state.users.filter(
+      u => !(u.role === "employee" && u.employeeId === empId)
+    );
+
+    saveState();
+    renderAll(getSelectedWeekId());
+  }
+
+  function deleteAdmin(adminId) {
+    const adminObj = state.admins.find(a => a.id === adminId);
+    state.admins = state.admins.filter(a => a.id !== adminId);
+
+    if (adminObj) {
+      state.users = state.users.filter(
+        u => !(u.role === "admin" && u.username === adminObj.username)
+      );
+    }
+
+    saveState();
+    renderAll(getSelectedWeekId());
+  }
+
+  // ===================== OVERLAY (ORTADA PANEL) =====================
+
+  function openOverlay(contentType) {
+    const back = document.getElementById("overlayBack");
+    const title = document.getElementById("overlayTitle");
+    const body = document.getElementById("overlayBody");
+
+    if (!isAdmin()) {
+      title.textContent = "Yetki Yok";
+      body.innerHTML = `<p class="text-muted mb-0">Bu menü sadece yöneticiler içindir.</p>`;
+      back.classList.remove("d-none");
+      return;
+    }
+
+    if (!contentType || contentType === "menu") {
+      title.textContent = "Menü";
+      body.innerHTML = `
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-primary" id="btnOverlayAddEmployee">
+            Çalışan Ekle
+          </button>
+          <button class="btn btn-outline-secondary" id="btnOverlayAddAdmin">
+            Yönetici Ekle
+          </button>
+        </div>
+      `;
+    }
+
+    if (contentType === "addEmployee") {
+      title.textContent = "Çalışan Ekle";
+      body.innerHTML = `
+        <form id="overlayEmployeeForm" class="row g-2">
+          <div class="col-12">
+            <label class="form-label mb-1">Çalışan Adı</label>
+            <input type="text" class="form-control form-control-sm" name="name" placeholder="Örn: Ali Yılmaz" required />
+          </div>
+          <div class="col-12">
+            <label class="form-label mb-1">Giriş Kullanıcı Adı</label>
+            <input type="text" class="form-control form-control-sm" name="username" placeholder="Örn: ali" required />
+          </div>
+          <div class="col-12">
+            <label class="form-label mb-1">Şifre</label>
+            <input type="password" class="form-control form-control-sm" name="password" placeholder="Şifre" required />
+          </div>
+          <div class="col-12">
+            <label class="form-label mb-1">Toplam Sosyal Medya Hesabı</label>
+            <input type="number" class="form-control form-control-sm" name="accounts" min="0" value="0" />
+          </div>
+          <div class="col-12 d-flex justify-content-between mt-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnOverlayBackMenu">
+              Geri
+            </button>
+            <button type="submit" class="btn btn-sm btn-primary">
+              Kaydet
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+    if (contentType === "addAdmin") {
+      title.textContent = "Yönetici Ekle";
+      body.innerHTML = `
+        <form id="overlayAdminForm" class="row g-2">
+          <div class="col-12">
+            <label class="form-label mb-1">İsim</label>
+            <input type="text" class="form-control form-control-sm" name="name" placeholder="Örn: İsmail Akdi" required />
+          </div>
+          <div class="col-12">
+            <label class="form-label mb-1">Giriş Kullanıcı Adı</label>
+            <input type="text" class="form-control form-control-sm" name="username" placeholder="Örn: ismail" required />
+          </div>
+          <div class="col-12">
+            <label class="form-label mb-1">Şifre</label>
+            <input type="password" class="form-control form-control-sm" name="password" placeholder="Şifre" required />
+          </div>
+          <div class="col-12 d-flex justify-content-between mt-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnOverlayBackMenu">
+              Geri
+            </button>
+            <button type="submit" class="btn btn-sm btn-primary">
+              Kaydet
+            </button>
+          </div>
+        </form>
+      `;
+    }
+
+    back.classList.remove("d-none");
+  }
+
+  function closeOverlay() {
+    document.getElementById("overlayBack").classList.add("d-none");
+  }
+
+  // ===================== EVENTLER =====================
+
+  document.addEventListener("DOMContentLoaded", function () {
+    // LOGIN
+    const loginBtn = document.getElementById("btnLogin");
+    const loginError = document.getElementById("loginError");
+
+    loginBtn.addEventListener("click", async () => {
+      const username = document.getElementById("loginUsername").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+      loginError.classList.add("d-none");
+      loginError.textContent = "";
+
+      if (!username || !password) {
+        loginError.textContent = "Kullanıcı adı ve şifre zorunludur.";
+        loginError.classList.remove("d-none");
+        return;
+      }
+
+      try {
+        const ok = await doLogin(username, password);
+        if (ok) {
+          await loadState();
+          showAppView();
+          renderAll();
+        }
+      } catch (e) {
+        loginError.textContent = e.message || "Giriş yapılamadı.";
+        loginError.classList.remove("d-none");
+      }
+    });
+
+    // Enter ile login
+    document.getElementById("loginPassword").addEventListener("keyup", (e) => {
+      if (e.key === "Enter") {
+        loginBtn.click();
+      }
+    });
+
+    // LOGOUT
+    document.getElementById("btnLogout").addEventListener("click", () => {
+      currentUser = { username: "", role: "employee" };
+      showLoginView();
+    });
+
+    // Hafta seçimi
+    document.getElementById("weekSelect").addEventListener("change", function () {
+      const selectedWeekId = this.value;
+      renderAll(selectedWeekId);
+    });
+
+    // Yeni hafta ekleme
+    document.getElementById("btnAddWeek").addEventListener("click", function () {
+      if (!isAdmin()) return;
+      const defaultLabel = (state.weeks.length + 1) + ". Hafta";
+      const label = prompt("Yeni haftanın adı:", defaultLabel);
+      if (label && label.trim().length > 0) {
+        addWeek(label.trim());
+      }
+    });
+
+    // Hafta verilerini kaydet
+    document.getElementById("btnSaveWeekData").addEventListener("click", function () {
+      saveWeekDataFromInputs(true);
+    });
+
+    // Input değiştikçe sessiz kaydet
+    document.getElementById("editTableBody").addEventListener("change", function (e) {
+      if (!isAdmin()) return;
+      if (e.target.tagName === "INPUT") {
+        saveWeekDataFromInputs(false);
+      }
+    });
+
+    // Hamburger menü
+    document.getElementById("btnMenuToggle").addEventListener("click", function () {
+      openOverlay("menu");
+    });
+
+    // Overlay kapama
+    document.getElementById("btnOverlayClose").addEventListener("click", closeOverlay);
+    document.getElementById("overlayBack").addEventListener("click", function (e) {
+      if (e.target.id === "overlayBack") {
+        closeOverlay();
+      }
+    });
+
+    // Overlay içi event delegasyonu
+    document.getElementById("overlayBody").addEventListener("click", function (e) {
+      if (e.target.id === "btnOverlayAddEmployee") {
+        openOverlay("addEmployee");
+      }
+      if (e.target.id === "btnOverlayAddAdmin") {
+        openOverlay("addAdmin");
+      }
+      if (e.target.id === "btnOverlayBackMenu") {
+        openOverlay("menu");
+      }
+    });
+
+    document.getElementById("overlayBody").addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (!isAdmin()) return;
+
+      if (e.target.id === "overlayEmployeeForm") {
+        const form = e.target;
+        const name = form.elements["name"].value.trim();
+        const username = form.elements["username"].value.trim();
+        const password = form.elements["password"].value.trim();
+        const accounts = form.elements["accounts"].value.trim();
+
+        if (!name || !username || !password) {
+          alert("Tüm alanları doldur.");
+          return;
+        }
+
+        addEmployeeWithUser({ name, username, password, accounts });
+        closeOverlay();
+      }
+
+      if (e.target.id === "overlayAdminForm") {
+        const form = e.target;
+        const name = form.elements["name"].value.trim();
+        const username = form.elements["username"].value.trim();
+        const password = form.elements["password"].value.trim();
+
+        if (!name || !username || !password) {
+          alert("Tüm alanları doldur.");
+          return;
+        }
+
+        addAdminWithUser({ name, username, password });
+        closeOverlay();
+      }
+    });
+
+    // İlk açılışta login ekranı gözüksün
+    showLoginView();
+  });
+</script>
+</body>
+</html>
