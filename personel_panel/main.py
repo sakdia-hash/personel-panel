@@ -1,11 +1,17 @@
 # main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-import json
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel
 import os
+import json
 
-DATA_FILE = "personel_data.json"
+# Bu dosyanın olduğu klasör
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# JSON ve HTML dosyalarının TAM yolu
+DATA_FILE = os.path.join(BASE_DIR, "personel_data.json")
+HTML_FILE = os.path.join(BASE_DIR, "personeltakip.html")
 
 app = FastAPI()
 
@@ -19,6 +25,7 @@ app.add_middleware(
 
 
 def load_data():
+    """JSON dosyasını oku, yoksa temel yapı ile oluştur."""
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
@@ -28,7 +35,7 @@ def load_data():
     else:
         data = {}
 
-    # Temel alan garantileri
+    # Temel alanları garantiye al
     if "employees" not in data:
         data["employees"] = []
     if "admins" not in data:
@@ -38,68 +45,83 @@ def load_data():
     if "users" not in data:
         data["users"] = []
 
-    # Varsayılan admin yoksa oluştur (admin / 1234)
+    # Eğer hiç admin yoksa, varsayılan admin (admin / 1234) oluştur
     has_admin = any(u.get("role") == "admin" for u in data["users"])
     if not has_admin:
-        default_admin = {
+        default_admin_user = {
             "id": "user_admin_default",
             "username": "admin",
-            "password": "1234",
+            "password": "1234",  # İstersen panelden değiştirirsin
             "role": "admin",
         }
-        data["users"].append(default_admin)
+        data["users"].append(default_admin_user)
 
         if not any(a.get("username") == "admin" for a in data["admins"]):
-            data["admins"].append(
-                {"id": "adm_admin_default", "name": "Sistem Admin", "username": "admin"}
-            )
+            default_admin = {
+                "id": "adm_default",
+                "name": "Varsayılan Admin",
+                "username": "admin",
+            }
+            data["admins"].append(default_admin)
 
+    save_data(data)
     return data
 
 
 def save_data(data: dict):
+    """JSON dosyasını kaydet."""
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
 @app.get("/")
-def root():
-   import os
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-HTML_FILE = os.path.join(BASE_DIR, "personeltakip.html")
-
-return FileResponse(HTML_FILE)
+async def index():
+    """Panelin HTML dosyasını döndür."""
+    # Burada TAM yol kullanıyoruz, Render'da hata olmaması için
+    if not os.path.exists(HTML_FILE):
+        raise RuntimeError(f"HTML dosyası bulunamadı: {HTML_FILE}")
+    return FileResponse(HTML_FILE)
 
 
 @app.get("/api/state")
-def get_state():
-    return load_data()
+async def get_state():
+    data = load_data()
+    return JSONResponse(content=data)
 
 
 @app.post("/api/state")
-async def set_state(payload: dict):
-    save_data(payload)
+async def set_state(new_state: dict):
+    """
+    Frontend state'i komple gönderiyor (employees, admins, weeks, users).
+    Bunu JSON'a kaydediyoruz.
+    """
+    if not isinstance(new_state, dict):
+        raise HTTPException(status_code=400, detail="Geçersiz veri")
+    save_data(new_state)
     return {"status": "ok"}
 
 
 @app.post("/api/login")
-async def login(payload: dict):
-    username = payload.get("username", "")
-    password = payload.get("password", "")
-
+async def login(payload: LoginRequest):
     data = load_data()
+    username = payload.username.strip()
+    password = payload.password.strip()
 
-    for user in data["users"]:
-        if user["username"] == username and user["password"] == password:
-            return {
-                "status": "ok",
-                "username": username,
-                "role": user["role"],
-            }
+    user = next(
+        (u for u in data["users"] if u.get("username") == username and u.get("password") == password),
+        None,
+    )
+
+    if not user:
+        return {"status": "error", "message": "Kullanıcı adı veya şifre hatalı."}
 
     return {
-        "status": "error",
-        "message": "Kullanıcı adı veya şifre hatalı."
+        "status": "ok",
+        "username": user["username"],
+        "role": user.get("role", "employee"),
     }
-
